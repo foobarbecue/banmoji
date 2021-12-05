@@ -1,13 +1,7 @@
 import { parseGIF, decompressFrames } from "gifuct-js"
-import GIF from "@coffeeb/gif"
+import { GIFEncoder, quantize, applyPalette } from 'gifenc';
 
-const gifExporter = new GIF({
-    worker: new Worker(new URL('./gif.worker.js', import.meta.url))
-})
-
-gifExporter.on('finished', function(blob) {
-    window.open(URL.createObjectURL(blob));
-});
+const gifExporter = new GIFEncoder()
 
 const uploadField = document.getElementsByTagName('input')[0]
 const gifcanvas = document.getElementsByTagName('canvas')[0] 
@@ -37,17 +31,34 @@ function drawFrames(){
     tempctx.putImageData(imgdata, frame.dims.left, frame.dims.top)
     imgctx.drawImage(tempcanvas,0, 0)
     imgctx.drawImage(overlay, 0, 0, frames[0].dims.width, frames[0].dims.height)
-    gifExporter.addFrame(imgctx, {copy: true})
+    
+    const imgdataForExport = imgctx.getImageData(0, 0 , frames[0].dims.width, frames[0].dims.height).data
+    
+    // Quantize your colors to a 256-color RGB palette palette
+    const palette = quantize(imgdataForExport, 256);
+    
+    // Get an indexed bitmap by reducing each pixel to the nearest color palette
+    const index = applyPalette(imgdataForExport, palette);
+    
+    gifExporter.writeFrame(imgdataForExport, frames[0].dims.width, frames[0].dims.height, { palette })
     frameInd++
     if (frameInd >= frames.length){
         frameInd = 0
-        gifExporter.render()
+        gifExporter.finish()
+        // Get a direct typed array view into the buffer to avoid copying it
+        const buffer = gifExporter.bytesView();
+        download(buffer, 'animation.gif', { type: 'image/gif' });
     }
     requestAnimationFrame(()=>{
         setTimeout(drawFrames, frame.delay)
     })
 }
 
-function download(){
-    
-}
+function download (buf, filename, type) {
+    const blob = buf instanceof Blob ? buf : new Blob([buf], { type });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+};
