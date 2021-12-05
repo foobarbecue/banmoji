@@ -2,7 +2,7 @@
   "name": "banmoji",
   "version": "1.0.0",
   "dependencies": {
-    "gifencoder": "^2.0.1",
+    "@coffeeb/gif": "^0.2.2",
     "gifuct-js": "^2.1.2"
   },
   "scripts": {
