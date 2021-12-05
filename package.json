@@ -1,0 +1,15 @@
+{
+  "name": "banmoji",
+  "version": "1.0.0",
+  "dependencies": {
+    "gifencoder": "^2.0.1",
+    "gifuct-js": "^2.1.2"
+  },
+  "scripts": {
+    "start": "snowpack dev",
+    "build": "snowpack build"
+  },
+  "devDependencies": {
+    "snowpack": "^3.8.8"
+  }
+}
