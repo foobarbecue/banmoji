@@ -12,7 +12,7 @@
             padding-bottom: 0.15em;
             margin-bottom: -0.15em;
         }
-        button#download, img#overlay, h2#preview{
+        button#download, img#overlay, h2#preview, canvas#gifdisplay{
             display: none
         }
     </style>
@@ -23,8 +23,15 @@
 <br />
 <h2 id="preview">Preview:</h2>
 <canvas id="gifdisplay"></canvas>
+<canvas id="origgifdisplay"></canvas>
+<div class="slidecontainer">
+    <input type="range" min="0" max="1" value="1" step="0.05" class="slider" id="nosignTransparency">
+</div>
 <button id="download" name="download" type="button">download nomoji .gif</button>
 <img id="overlay" src="banned.svg">
+<p>
+<a href="https://github.com/foobarbecue/banmoji">source code & issue tracker</a>
+</p>
 <script src="index.js" type="module"></script>
 </body>
 </html>
