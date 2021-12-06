@@ -1,5 +1,5 @@
 import { parseGIF, decompressFrames } from "gifuct-js"
-import { GIFEncoder, quantize, applyPalette } from 'gifenc';
+import { GIFEncoder, quantize, applyPalette } from 'gifenc'
 
 const gifExporter = new GIFEncoder()
 
@@ -41,17 +41,17 @@ function render(){
         const imgdataForExport = imgctx.getImageData(0, 0, frames[0].dims.width, frames[0].dims.height).data
 
         // Quantize your colors to a 256-color RGB palette palette
-        const palette = quantize(imgdataForExport, 256);
+        const palette = quantize(imgdataForExport, 256)
 
         // Get an indexed bitmap by reducing each pixel to the nearest color palette
-        const indexed = applyPalette(imgdataForExport, palette);
+        const indexed = applyPalette(imgdataForExport, palette)
 
         gifExporter.writeFrame(indexed, frames[0].dims.width, frames[0].dims.height, {palette})
     }
     gifExporter.finish()
     // Get a direct typed array view into the buffer to avoid copying it
-    const buffer = gifExporter.bytesView();
-    download(buffer, 'animation.gif', { type: 'image/gif' });
+    const buffer = gifExporter.bytesView()
+    download(buffer, 'animation.gif', { type: 'image/gif' })
 }
 
 function addOverlay(inpImgFrame, overlay){
@@ -75,10 +75,10 @@ function preview(){
 }
 
 function download (buf, filename, type) {
-    const blob = buf instanceof Blob ? buf : new Blob([buf], { type });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-};
+    const blob = buf instanceof Blob ? buf : new Blob([buf], { type })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = filename
+    anchor.click()
+}
