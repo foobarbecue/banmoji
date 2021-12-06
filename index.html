@@ -3,12 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>banmoji</title>
+    <style>
+        #no{
+            background: url(banned.svg);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position-y: 0.15em;
+            padding-bottom: 0.15em;
+            margin-bottom: -0.15em;
+        }
+        button#download, img#overlay, h2#preview{
+            display: none
+        }
+    </style>
 </head>
 <body>
+<h1>banmoji.com: Just say <span id="no">no</span> with an emoji.</h1>
 <input type="file">
-Just say no with an emoji.
-<div>Upload your image</div> + <img id="overlay" src="banned.svg"> =
+<br />
+<h2 id="preview">Preview:</h2>
 <canvas id="gifdisplay"></canvas>
+<button id="download" name="download" type="button">download nomoji .gif</button>
+<img id="overlay" src="banned.svg">
 <script src="index.js" type="module"></script>
 </body>
 </html>

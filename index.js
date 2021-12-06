@@ -10,6 +10,7 @@ const imgctx = gifcanvas.getContext('2d')
 const tempcanvas = document.createElement('canvas')
 const tempctx = tempcanvas.getContext('2d')
 const overlay = document.querySelector('#overlay')
+const downloadButton = document.getElementsByName("download")[0]
 let frames = null
 let frameInd=0
 uploadField.onchange = async function (evt){
@@ -21,36 +22,55 @@ uploadField.onchange = async function (evt){
     tempcanvas.height = gifcanvas.height
     overlay.width = gifcanvas.width
     overlay.height = gifcanvas.height
-    drawFrames()
+    
+    // Now that we have an input image, set up the controls
+    downloadButton.onclick = render
+    downloadButton.style.display = 'block'
+    
+    preview()
 }
 
-function drawFrames(){
-    const frame = frames[frameInd]
-    const imgdata = imgctx.createImageData(frame.dims.width, frame.dims.height)
-    imgdata.data.set(frame.patch)
-    tempctx.putImageData(imgdata, frame.dims.left, frame.dims.top)
+function render(){
+    for (const frame of frames) {
+        const imgdata = imgctx.createImageData(frame.dims.width, frame.dims.height)
+        imgdata.data.set(frame.patch)
+        tempctx.putImageData(imgdata, frame.dims.left, frame.dims.top)
+        imgctx.drawImage(tempcanvas, 0, 0)
+        imgctx.drawImage(overlay, 0, 0, frames[0].dims.width, frames[0].dims.height)
+
+        const imgdataForExport = imgctx.getImageData(0, 0, frames[0].dims.width, frames[0].dims.height).data
+
+        // Quantize your colors to a 256-color RGB palette palette
+        const palette = quantize(imgdataForExport, 256);
+
+        // Get an indexed bitmap by reducing each pixel to the nearest color palette
+        const indexed = applyPalette(imgdataForExport, palette);
+
+        gifExporter.writeFrame(indexed, frames[0].dims.width, frames[0].dims.height, {palette})
+    }
+    gifExporter.finish()
+    // Get a direct typed array view into the buffer to avoid copying it
+    const buffer = gifExporter.bytesView();
+    download(buffer, 'animation.gif', { type: 'image/gif' });
+}
+
+function addOverlay(inpImgFrame, overlay){
+    const imgdata = imgctx.createImageData(inpImgFrame.dims.width, inpImgFrame.dims.height)
+    imgdata.data.set(inpImgFrame.patch)
+    tempctx.putImageData(imgdata, inpImgFrame.dims.left, inpImgFrame.dims.top)
     imgctx.drawImage(tempcanvas,0, 0)
     imgctx.drawImage(overlay, 0, 0, frames[0].dims.width, frames[0].dims.height)
-    
-    const imgdataForExport = imgctx.getImageData(0, 0 , frames[0].dims.width, frames[0].dims.height).data
-    
-    // Quantize your colors to a 256-color RGB palette palette
-    const palette = quantize(imgdataForExport, 256);
-    
-    // Get an indexed bitmap by reducing each pixel to the nearest color palette
-    const index = applyPalette(imgdataForExport, palette);
-    
-    gifExporter.writeFrame(imgdataForExport, frames[0].dims.width, frames[0].dims.height, { palette })
+    return inpImgFrame
+}
+
+function preview(){
+    const frame = addOverlay(frames[frameInd], overlay)
     frameInd++
     if (frameInd >= frames.length){
         frameInd = 0
-        gifExporter.finish()
-        // Get a direct typed array view into the buffer to avoid copying it
-        const buffer = gifExporter.bytesView();
-        download(buffer, 'animation.gif', { type: 'image/gif' });
     }
     requestAnimationFrame(()=>{
-        setTimeout(drawFrames, frame.delay)
+        setTimeout(preview, frame.delay)
     })
 }
 
