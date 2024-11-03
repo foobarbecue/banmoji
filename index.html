@@ -387,6 +387,7 @@
                 // Reset canvas to default size
                 canvas.width = 300;
                 canvas.height = 300;
+                clickFirstEmoji();
                 updateCanvas();
                 updateDownloadButton();
             });
@@ -499,6 +500,11 @@
             downloadBtn.disabled = !selectedFile && !selectedEmoji;
         }
 
+        function clickFirstEmoji(){
+            const firstEmoji = document.querySelector('.emoji-btn');
+            firstEmoji.click();
+        }
+
         // Download handling
         downloadBtn.addEventListener('click', () => {
             if (!selectedFile && !selectedEmoji) return;
@@ -515,8 +521,7 @@
                 console.error('Download error:', error);
             }
         });
-        const firstMoji = document.querySelector('.emoji-btn');
-        firstMoji.click();
+        clickFirstEmoji();
         updateCanvas();
         updateDownloadButton();
     </script>
