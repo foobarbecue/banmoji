@@ -109,6 +109,10 @@
             background-color: #f5f5f5;
         }
 
+        .emoji-btn.active {
+            border: thin black solid;
+        }
+
         .canvas-container {
             display: flex;
             justify-content: center;
@@ -152,21 +156,22 @@
             </div>
             <div class="card-content">
                 <div class="tabs">
-                    <button class="tab active" data-tab="image">Upload Image</button>
-                    <button class="tab" data-tab="emoji">Select Emoji</button>
+                    <button class="tab active" data-tab="emoji">Select Emoji</button>
+                    <button class="tab" data-tab="image">Upload Image</button>
                 </div>
 
-                <div id="imageTab" class="tab-content active">
-                    <div class="input-group">
-                        <input type="file" accept="image/*" id="imageInput">
-                    </div>
-                </div>
 
-                <div id="emojiTab" class="tab-content">
+                <div id="emojiTab" class="tab-content active">
                     <div class="input-group">
                         <input type="text" id="searchInput" placeholder="Search emojis (e.g., 'happy', 'animal', 'food')...">
                     </div>
                     <div id="emojiGrid" class="emoji-grid"></div>
+                </div>
+
+                <div id="imageTab" class="tab-content">
+                    <div class="input-group">
+                        <input type="file" accept="image/*" id="imageInput">
+                    </div>
                 </div>
 
                 <div class="canvas-container">
@@ -430,6 +435,8 @@
                     // Reset canvas to default size for emojis
                     canvas.width = 300;
                     canvas.height = 300;
+                    document.querySelectorAll('.emoji-btn').forEach(el=>el.classList.remove('active'))
+                    button.classList.add('active');
                     updateCanvas();
                     updateDownloadButton();
                 };
@@ -482,6 +489,7 @@
                 ctx.font = `${canvas.width * 0.6}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                ctx.moveTo(0,100);
                 ctx.fillText(selectedEmoji, canvas.width / 2, canvas.height / 2);
                 drawNoSign(canvas.width, canvas.height);
             }
@@ -507,6 +515,10 @@
                 console.error('Download error:', error);
             }
         });
+        const firstMoji = document.querySelector('.emoji-btn');
+        firstMoji.click();
+        updateCanvas();
+        updateDownloadButton();
     </script>
 </body>
 </html>
