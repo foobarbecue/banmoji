@@ -2,36 +2,511 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>banmoji</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Sign Generator</title>
     <style>
-        #no{
-            background: url(banned.svg);
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position-y: 0.15em;
-            padding-bottom: 0.15em;
-            margin-bottom: -0.15em;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        button#download, img#overlay, h2#preview, canvas#gifdisplay{
-            display: none
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f5f5f5;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 42rem;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .card-header h1 {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+            margin-bottom: 1rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 0.25rem;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 0.25rem;
+        }
+
+        .emoji-btn {
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 0.25rem;
+        }
+
+        .emoji-btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e5e5e5;
+            border-radius: 0.25rem;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .download-btn:disabled {
+            background-color: #e5e5e5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-<h1>banmoji.com: Just say <span id="no">no</span> with an emoji.</h1>
-<input type="file">
-<br />
-<h2 id="preview">Preview:</h2>
-<canvas id="gifdisplay"></canvas>
-<canvas id="origgifdisplay"></canvas>
-<div class="slidecontainer">
-    <input type="range" min="0" max="1" value="1" step="0.05" class="slider" id="nosignTransparency">
-</div>
-<button id="download" name="download" type="button">download nomoji .gif</button>
-<img id="overlay" src="banned.svg">
-<p>
-<a href="https://github.com/foobarbecue/banmoji">source code & issue tracker</a>
-</p>
-<script src="index.js" type="module"></script>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>No Sign Generator</h1>
+            </div>
+            <div class="card-content">
+                <div class="tabs">
+                    <button class="tab active" data-tab="image">Upload Image</button>
+                    <button class="tab" data-tab="emoji">Select Emoji</button>
+                </div>
+
+                <div id="imageTab" class="tab-content active">
+                    <div class="input-group">
+                        <input type="file" accept="image/*" id="imageInput">
+                    </div>
+                </div>
+
+                <div id="emojiTab" class="tab-content">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" placeholder="Search emojis (e.g., 'happy', 'animal', 'food')...">
+                    </div>
+                    <div id="emojiGrid" class="emoji-grid"></div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="canvas" width="300" height="300"></canvas>
+                </div>
+
+                <button id="downloadBtn" class="download-btn" disabled>Download Image</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const emojiData = [
+            // Smileys & Emotions
+            { emoji: '😀', keywords: 'grinning face happy smile joy laugh' },
+            { emoji: '😃', keywords: 'grinning face with big eyes happy joy haha' },
+            { emoji: '😄', keywords: 'grinning face with smiling eyes happy joy laugh' },
+            { emoji: '😁', keywords: 'beaming face with smiling eyes happy joy grin' },
+            { emoji: '😅', keywords: 'grinning face with sweat awkward embarrassed' },
+            { emoji: '🤣', keywords: 'rolling on the floor laughing lol rofl laugh' },
+            { emoji: '😂', keywords: 'face with tears of joy laugh cry lol' },
+            { emoji: '🙂', keywords: 'slightly smiling face happy smile' },
+            { emoji: '🙃', keywords: 'upside-down face silly playful' },
+            { emoji: '😉', keywords: 'winking face wink flirt playful' },
+            { emoji: '😊', keywords: 'smiling face with smiling eyes happy joy sweet' },
+            { emoji: '😇', keywords: 'smiling face with halo angel innocent' },
+            { emoji: '🥰', keywords: 'smiling face with hearts love adore affection' },
+            { emoji: '😍', keywords: 'smiling face with heart-eyes love crush adore' },
+            { emoji: '🤩', keywords: 'star-struck excited amazed wow' },
+            { emoji: '😘', keywords: 'face blowing a kiss love flirt affection' },
+            { emoji: '😗', keywords: 'kissing face love affection' },
+            { emoji: '😚', keywords: 'kissing face with closed eyes love affection' },
+            { emoji: '😙', keywords: 'kissing face with smiling eyes love affection' },
+            { emoji: '🥲', keywords: 'smiling face with tear grateful touched moved' },
+            { emoji: '😋', keywords: 'face savoring food yum delicious tasty' },
+            { emoji: '😛', keywords: 'face with tongue playful silly' },
+            { emoji: '😜', keywords: 'winking face with tongue playful silly' },
+            { emoji: '🤪', keywords: 'zany face crazy silly goofy' },
+            { emoji: '😝', keywords: 'squinting face with tongue playful silly' },
+            { emoji: '🤑', keywords: 'money-mouth face rich money wealthy' },
+            { emoji: '🤗', keywords: 'smiling face with open hands hugging hug' },
+            { emoji: '🤭', keywords: 'face with hand over mouth surprise shock' },
+            { emoji: '🤫', keywords: 'shushing face quiet silence shhh' },
+            { emoji: '🤔', keywords: 'thinking face hmm wonder ponder' },
+            { emoji: '🤤', keywords: 'drooling face food delicious' },
+            { emoji: '🤠', keywords: 'cowboy hat face western cowboy' },
+            { emoji: '🥸', keywords: 'disguised face incognito disguise' },
+
+            // Feelings & Gestures
+            { emoji: '🤡', keywords: 'clown face circus funny' },
+            { emoji: '🥳', keywords: 'partying face celebration party birthday' },
+            { emoji: '🥺', keywords: 'pleading face puppy eyes begging' },
+            { emoji: '🤯', keywords: 'exploding head mind blown shocked amazed' },
+            { emoji: '🤬', keywords: 'face with symbols on mouth swearing angry' },
+            { emoji: '😡', keywords: 'pouting face angry mad rage' },
+            { emoji: '😠', keywords: 'angry face mad frustrated' },
+            { emoji: '🥵', keywords: 'hot face warm heated sweating' },
+            { emoji: '🥶', keywords: 'cold face freezing ice winter' },
+            { emoji: '😳', keywords: 'flushed face blushing embarrassed' },
+            { emoji: '🥴', keywords: 'woozy face dizzy tipsy drunk' },
+            { emoji: '😵', keywords: 'dizzy face confused spinning' },
+            { emoji: '🤢', keywords: 'nauseated face sick vomit gross' },
+            { emoji: '🤮', keywords: 'face vomiting sick throw up' },
+            { emoji: '🤧', keywords: 'sneezing face sick allergy' },
+            { emoji: '😷', keywords: 'face with medical mask sick ill' },
+            { emoji: '🤒', keywords: 'face with thermometer sick fever' },
+            { emoji: '🤕', keywords: 'face with head-bandage hurt injury' },
+            { emoji: '🤑', keywords: 'money-mouth face rich wealthy' },
+
+            // Animals
+            { emoji: '🐶', keywords: 'dog face puppy pet cute dog' },
+            { emoji: '🐱', keywords: 'cat face kitten pet cute cat' },
+            { emoji: '🐭', keywords: 'mouse face rodent pet cute' },
+            { emoji: '🐹', keywords: 'hamster face rodent pet cute' },
+            { emoji: '🐰', keywords: 'rabbit face bunny pet cute' },
+            { emoji: '🦊', keywords: 'fox face animal cute' },
+            { emoji: '🐻', keywords: 'bear face animal wild' },
+            { emoji: '🐼', keywords: 'panda face animal cute' },
+            { emoji: '🐨', keywords: 'koala face animal cute' },
+            { emoji: '🐯', keywords: 'tiger face animal wild' },
+            { emoji: '🦁', keywords: 'lion face animal wild king' },
+            { emoji: '🐮', keywords: 'cow face animal farm' },
+            { emoji: '🐷', keywords: 'pig face animal farm' },
+            { emoji: '🐸', keywords: 'frog face animal cute' },
+            { emoji: '🐵', keywords: 'monkey face animal wild' },
+            { emoji: '🦄', keywords: 'unicorn face fantasy magical' },
+            { emoji: '🐝', keywords: 'honeybee insect honey' },
+            { emoji: '🦋', keywords: 'butterfly insect pretty' },
+            { emoji: '🐢', keywords: 'turtle animal slow' },
+            { emoji: '🦖', keywords: 'T-Rex dinosaur prehistoric' },
+
+            // Food & Drink
+            { emoji: '🍎', keywords: 'red apple fruit food healthy' },
+            { emoji: '🍐', keywords: 'pear fruit food' },
+            { emoji: '🍊', keywords: 'orange fruit food' },
+            { emoji: '🍋', keywords: 'lemon fruit food' },
+            { emoji: '🍌', keywords: 'banana fruit food' },
+            { emoji: '🍉', keywords: 'watermelon fruit food summer' },
+            { emoji: '🍇', keywords: 'grapes fruit food' },
+            { emoji: '🍓', keywords: 'strawberry fruit food' },
+            { emoji: '🫐', keywords: 'blueberries fruit food' },
+            { emoji: '🍒', keywords: 'cherries fruit food' },
+            { emoji: '🥝', keywords: 'kiwi fruit food' },
+            { emoji: '🍅', keywords: 'tomato vegetable food' },
+            { emoji: '🥑', keywords: 'avocado fruit food' },
+            { emoji: '🌮', keywords: 'taco food mexican' },
+            { emoji: '🌯', keywords: 'burrito food mexican' },
+            { emoji: '🍔', keywords: 'hamburger food fast food' },
+            { emoji: '🍟', keywords: 'french fries food fast food' },
+            { emoji: '🍕', keywords: 'pizza food italian' },
+            { emoji: '🥪', keywords: 'sandwich food lunch' },
+            { emoji: '🥨', keywords: 'pretzel food snack' },
+            { emoji: '🍦', keywords: 'soft ice cream dessert sweet' },
+            { emoji: '🍩', keywords: 'doughnut dessert sweet' },
+            { emoji: '🍪', keywords: 'cookie dessert sweet' },
+            { emoji: '🎂', keywords: 'birthday cake dessert celebration' },
+            { emoji: '🍰', keywords: 'shortcake dessert sweet' },
+            { emoji: '🧁', keywords: 'cupcake dessert sweet' },
+            { emoji: '🥤', keywords: 'cup with straw drink beverage' },
+            { emoji: '☕', keywords: 'hot beverage coffee tea' },
+            { emoji: '🍷', keywords: 'wine glass alcohol drink' },
+            { emoji: '🍺', keywords: 'beer mug alcohol drink' },
+
+            // Activities & Sports
+            { emoji: '⚽', keywords: 'soccer ball sport football' },
+            { emoji: '🏀', keywords: 'basketball sport ball' },
+            { emoji: '🏈', keywords: 'american football sport ball' },
+            { emoji: '⚾', keywords: 'baseball sport ball' },
+            { emoji: '🎾', keywords: 'tennis sport ball' },
+            { emoji: '🏐', keywords: 'volleyball sport ball' },
+            { emoji: '🎮', keywords: 'video game controller gaming play' },
+            { emoji: '🎨', keywords: 'artist palette art painting creative' },
+            { emoji: '🎭', keywords: 'performing arts theater drama' },
+            { emoji: '🎪', keywords: 'circus tent carnival festival' },
+            { emoji: '🎢', keywords: 'roller coaster amusement park fun' },
+            { emoji: '🎯', keywords: 'direct hit target bullseye' },
+            { emoji: '🎲', keywords: 'game die dice gaming' },
+            { emoji: '🎻', keywords: 'violin music instrument' },
+            { emoji: '🎸', keywords: 'guitar music instrument' },
+            { emoji: '🎹', keywords: 'musical keyboard piano instrument' },
+
+            // Travel & Places
+            { emoji: '✈️', keywords: 'airplane travel flight transport' },
+            { emoji: '🚗', keywords: 'automobile car vehicle transport' },
+            { emoji: '🚲', keywords: 'bicycle bike cycling transport' },
+            { emoji: '🚁', keywords: 'helicopter transport flight' },
+            { emoji: '⛵', keywords: 'sailboat boat ship transport' },
+            { emoji: '🚀', keywords: 'rocket space ship launch' },
+            { emoji: '🌍', keywords: 'globe showing Europe-Africa earth world planet' },
+            { emoji: '🌎', keywords: 'globe showing Americas earth world planet' },
+            { emoji: '🗽', keywords: 'Statue of Liberty New York USA America' },
+            { emoji: '🗼', keywords: 'Tokyo tower Japan landmark' },
+            { emoji: '🎡', keywords: 'ferris wheel carnival amusement park' },
+            { emoji: '⛰️', keywords: 'mountain nature landscape' },
+            { emoji: '🌋', keywords: 'volcano mountain eruption nature' },
+            { emoji: '🏖️', keywords: 'beach with umbrella vacation summer' },
+            { emoji: '🌅', keywords: 'sunset nature evening dusk' },
+
+            // Objects
+            { emoji: '📱', keywords: 'mobile phone smartphone device' },
+            { emoji: '💻', keywords: 'laptop computer device technology' },
+            { emoji: '⌚', keywords: 'watch time accessory' },
+            { emoji: '📷', keywords: 'camera photo picture' },
+            { emoji: '💡', keywords: 'light bulb idea bright' },
+            { emoji: '🔋', keywords: 'battery power energy' },
+            { emoji: '📚', keywords: 'books reading study library' },
+            { emoji: '✏️', keywords: 'pencil writing draw' },
+            { emoji: '📦', keywords: 'package box delivery' },
+            { emoji: '🎁', keywords: 'wrapped gift present birthday' },
+
+            // Symbols
+            { emoji: '❤️', keywords: 'red heart love like affection' },
+            { emoji: '🧡', keywords: 'orange heart love like affection' },
+            { emoji: '💛', keywords: 'yellow heart love like affection' },
+            { emoji: '💚', keywords: 'green heart love like affection' },
+            { emoji: '💙', keywords: 'blue heart love like affection' },
+            { emoji: '💜', keywords: 'purple heart love like affection' },
+            { emoji: '🖤', keywords: 'black heart love like affection' },
+            { emoji: '💔', keywords: 'broken heart heartbreak sad' },
+            { emoji: '✨', keywords: 'sparkles shiny stars glitter' },
+            { emoji: '⭐', keywords: 'star rating favorite' },
+            { emoji: '🌟', keywords: 'glowing star shiny sparkle' },
+            { emoji: '💫', keywords: 'dizzy star sparkle' },
+            { emoji: '🎵', keywords: 'musical note music melody' },
+            { emoji: '🎶', keywords: 'musical notes music melody' }
+        ];
+
+        // Rest of the JavaScript code remains exactly the same
+
+        let selectedFile = null;
+        let selectedEmoji = null;
+
+        // Elements
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const imageInput = document.getElementById('imageInput');
+        const searchInput = document.getElementById('searchInput');
+        const emojiGrid = document.getElementById('emojiGrid');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
+                // Reset state
+                selectedFile = null;
+                selectedEmoji = null;
+                searchInput.value = '';
+                imageInput.value = '';
+                // Reset canvas to default size
+                canvas.width = 300;
+                canvas.height = 300;
+                updateCanvas();
+                updateDownloadButton();
+            });
+        });
+
+        // Image upload handling
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedFile = e.target.result;
+                    selectedEmoji = null;
+
+                    // Create temporary image to get dimensions
+                    const img = new Image();
+                    img.onload = () => {
+                        // Set canvas size to match image dimensions
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        updateCanvas();
+                        updateDownloadButton();
+                    };
+                    img.src = selectedFile;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Emoji search and grid
+        function renderEmojiGrid(searchTerm = '') {
+            emojiGrid.innerHTML = '';
+            const filteredEmojis = emojiData.filter(item =>
+                item.keywords.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.emoji.includes(searchTerm)
+            );
+
+            filteredEmojis.forEach(item => {
+                const button = document.createElement('button');
+                button.className = 'emoji-btn';
+                button.textContent = item.emoji;
+                button.title = item.keywords;
+                button.onclick = () => {
+                    selectedEmoji = item.emoji;
+                    selectedFile = null;
+                    // Reset canvas to default size for emojis
+                    canvas.width = 300;
+                    canvas.height = 300;
+                    updateCanvas();
+                    updateDownloadButton();
+                };
+                emojiGrid.appendChild(button);
+            });
+        }
+
+        searchInput.addEventListener('input', (e) => renderEmojiGrid(e.target.value));
+        renderEmojiGrid();
+
+        // Canvas drawing
+        function drawNoSign(width, height) {
+            // Scale the line width based on the image size
+            const baseSize = Math.min(width, height);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = baseSize * 0.1;
+
+            // Draw circle
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, baseSize * 0.4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw diagonal line
+            ctx.beginPath();
+            const offset = baseSize * 0.28;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            ctx.moveTo(centerX - offset, centerY - offset);
+            ctx.lineTo(centerX + offset, centerY + offset);
+            ctx.stroke();
+        }
+
+        function updateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (selectedFile) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    drawNoSign(canvas.width, canvas.height);
+                };
+                img.src = selectedFile;
+            } else if (selectedEmoji) {
+                // Fill with white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw emoji
+                ctx.fillStyle = 'black';
+                ctx.font = `${canvas.width * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(selectedEmoji, canvas.width / 2, canvas.height / 2);
+                drawNoSign(canvas.width, canvas.height);
+            }
+        }
+
+        function updateDownloadButton() {
+            downloadBtn.disabled = !selectedFile && !selectedEmoji;
+        }
+
+        // Download handling
+        downloadBtn.addEventListener('click', () => {
+            if (!selectedFile && !selectedEmoji) return;
+
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'no-sign.png';
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Download error:', error);
+            }
+        });
+    </script>
 </body>
 </html>
