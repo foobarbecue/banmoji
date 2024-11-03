@@ -453,7 +453,7 @@
             // Scale the line width based on the image size
             const baseSize = Math.min(width, height);
             ctx.strokeStyle = 'red';
-            ctx.lineWidth = baseSize * 0.1;
+            ctx.lineWidth = baseSize * 0.07;
 
             // Draw circle
             ctx.beginPath();
@@ -487,11 +487,10 @@
 
                 // Draw emoji
                 ctx.fillStyle = 'black';
-                ctx.font = `${canvas.width * 0.6}px Arial`;
+                ctx.font = `${canvas.width * 0.55}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.moveTo(0,100);
-                ctx.fillText(selectedEmoji, canvas.width / 2, canvas.height / 2);
+                ctx.fillText(selectedEmoji, canvas.width / 2, (canvas.height / 2) + 13);
                 drawNoSign(canvas.width, canvas.height);
             }
         }
